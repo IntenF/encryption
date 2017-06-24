@@ -1,14 +1,16 @@
 rsa.py
-	RSA���Í����e�X�g���邽�߂̃R�[�h
+
+	RSA鍵暗号をテストするためのコード
 	http://qiita.com/QUANON/items/e7b181dd08f2f0b4fdbe
-	�����Ƃɍ쐬
+	をもとに作成
 
 passwords_strager.py
-	�p�X���[�h��ۑ����邽�߂̃��K�[
-	�}�X�^�p�X���[�h�ł��낢��Ȕ閧���Ƃ�ۑ��ł��܂��B�}�X�^�p�X���[�h���΂�Ȃ�����͍��̂Ƃ���N�ɂ������Ȃ��B
-	�g�p�Í��@AES
 
-	�K�v�ȃ��C�u����
+	パスワードを保存するためのロガー
+	マスタパスワードでいろいろな秘密ごとを保存できます。マスタパスワードがばれない限りは今のところ誰にも解けない。
+	使用暗号　AES
+
+	必要なライブラリ
 		os, pandas, pickle, hashlib, secrests, Crypto
-		��������Anaconda�ɓ����Ă܂��BCrypto��"pip install pycrypto"�œ����
+		だいたいAnacondaに入ってます。Cryptoは"pip install pycrypto"で入れる
 		
