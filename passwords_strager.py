@@ -16,28 +16,56 @@ pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
 depad = lambda s: s[:-ord(s[-1])]
 
 def reset_log():
+    '''ログをリセットします。完全に消去するため注意が必要です'''
     with open(log_file, 'wb') as f:
         encryption = pandas.DataFrame(columns=['password', 'solt', 'iv'])
         pickle.dump(encryption, f)
     with open(log_file, 'rb') as f:
         encryption = pickle.load(f)
 
-def set_pass():
+def write_pass(name, password, solt, iv):
+    '''ログにパスワードを記録します
+        name 項目名(隠しません)
+        password　パスワード（暗号化して記録します）
+        solt ソルト（パスワードへの辞書攻撃を防ぎます）
+        iv CBCモードの暗号化に必要な初期化ベクトル
+    '''
     global encryption, pass_words
+    secret_key = hashlib.sha256(solt + pass_words.encode('utf-8')).digest()  # ハッシュ化された
+    aes = AES.new(secret_key, AES.MODE_CBC, iv)
+    encryption_data = aes.encrypt(pad(password))
+    newone = pandas.DataFrame([[encryption_data, solt, iv]], index=[name], columns=['password', 'solt', 'iv'])
+    encryption = encryption.append(newone)
+    with open(log_file, 'wb') as f:
+        pickle.dump(encryption, f)
+
+def set_pass():
+    '''パスワードを入力をもとにセットします
+    :return:　なし
+    '''
     name = input('項目名を入力してください')
     password = input("項目に対するパスワードを入力してください")
     solt = secrets.token_bytes(32)
     iv = os.urandom(16)
-    secret_key = hashlib.sha256(solt + pass_words.encode('utf-8')).digest() #ハッシュ化された
+    write_pass(name, password, solt, iv)
+
+def read_pass(name):
+    '''
+    ログからパスワードを読み込みます
+    :param name:項目名
+    :return: パスワード（UTF8）
+    '''
+    global encryption, pass_words
+    encryption_data, solt, iv = encryption.ix[name]
+    secret_key = hashlib.sha256(solt + pass_words.encode('utf-8')).digest()
     aes = AES.new(secret_key, AES.MODE_CBC, iv)
-    encryption_data = aes.encrypt(pad(password))
-    newone = pandas.DataFrame([[encryption_data, solt, iv]], index=[name], columns=['password', 'solt', 'iv'])
-    encryption= encryption.append(newone)
-    with open(log_file, 'wb') as f:
-        pickle.dump(encryption, f)
+    return depad(aes.decrypt(encryption_data).decode('utf-8'))
 
 def view_pass():
-    global encryption, pass_words
+    '''
+    パスワードを対話的なIFで表示します
+    :return: なし
+    '''
     print('パスワード閲覧モード：\n\t項目名を指定してパスワードが見れます\n\tやめるには"exit"\t項目名表示:"view"')
     while True:
         name = input('\t:')
@@ -49,14 +77,7 @@ def view_pass():
         elif name not in encryption.index:
             print('\t{}という項目はありません'.format(name))
         else:
-            encryption_data, solt, iv = encryption.ix[name]
-            secret_key = hashlib.sha256(solt + pass_words.encode('utf-8')).digest()
-            aes = AES.new(secret_key, AES.MODE_CBC, iv)
-            print(name+'\n',depad(aes.decrypt(encryption_data).decode('utf-8')))
-
-
-    #項目名のリストを出力
-
+            print(name+'\n',read_pass(name))
 
 if __name__ == '__main__':
     pass_words = input("マスタパスワードを入力してください")
