@@ -9,18 +9,17 @@ from Crypto.Cipher import AES
 import pickle
 
 pass_words = ""#input("パスワードを入力してください")
-with open('encryption.pass', 'rb') as f:
-    encryption = pickle.load(f)
+log_file = 'pass.log'
 
 BS = 16
 pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
 depad = lambda s: s[:-ord(s[-1])]
 
 def reset_log():
-    with open('encryption.pass', 'wb') as f:
+    with open(log_file, 'wb') as f:
         encryption = pandas.DataFrame(columns=['password', 'solt', 'iv'])
         pickle.dump(encryption, f)
-    with open('encryption.pass', 'rb') as f:
+    with open(log_file, 'rb') as f:
         encryption = pickle.load(f)
 
 def set_pass():
@@ -34,21 +33,21 @@ def set_pass():
     encryption_data = aes.encrypt(pad(password))
     newone = pandas.DataFrame([[encryption_data, solt, iv]], index=[name], columns=['password', 'solt', 'iv'])
     encryption= encryption.append(newone)
-    with open('encryption.pass', 'wb') as f:
+    with open(log_file, 'wb') as f:
         pickle.dump(encryption, f)
 
 def view_pass():
     global encryption, pass_words
-    print('パスワード閲覧モード：\n項目名を指定でパスワードが見れます\nやめるには"exit"\t項目名表示:"view"')
+    print('パスワード閲覧モード：\n\t項目名を指定してパスワードが見れます\n\tやめるには"exit"\t項目名表示:"view"')
     while True:
-        name = input('入力を入れてください\n:')
+        name = input('\t:')
         if name == 'exit':
             break
         elif name == 'view':
             ind = [x for x in encryption.index]
-            print(ind)
+            print('\t',ind)
         elif name not in encryption.index:
-            print('{}という項目はありません'.format(name))
+            print('\t{}という項目はありません'.format(name))
         else:
             encryption_data, solt, iv = encryption.ix[name]
             secret_key = hashlib.sha256(solt + pass_words.encode('utf-8')).digest()
@@ -61,7 +60,16 @@ def view_pass():
 
 if __name__ == '__main__':
     pass_words = input("マスタパスワードを入力してください")
-    cmdstring = 'パスワード閲覧ですか？入力ですか？(set(s)/view(v))\n終了するときは"exit,リセットは"reset",マスタパスワードを入れなおす"repass"\n:'
+    import os.path
+    if os.path.isfile(log_file) == False:
+        with open(log_file, 'wb') as f:
+            encryption = pandas.DataFrame(columns=['password', 'solt', 'iv'])
+            pickle.dump(encryption, f)
+        print('はじめての使用ですね。新しくログファイルを生成しました。')
+    with open(log_file, 'rb') as f:
+        encryption = pickle.load(f)
+
+    cmdstring = 'パスワード閲覧ですか？入力ですか？(view(v)/set(s))\n終了するときは"exit,リセットは"reset",マスタパスワードを入れなおす"repass"\n:'
     cmd = input(cmdstring)
     while cmd != 'exit':
         if cmd == 'set' or cmd == 's':
