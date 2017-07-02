@@ -49,6 +49,14 @@ def set_pass():
     iv = os.urandom(16)
     write_pass(name, password, solt, iv)
 
+def del_pass(name):
+    global encryption
+    if name not in encryption.index:
+        print('{}という項目名はありません'.format(name))
+        return
+    encryption = encryption.drop(name)
+    return
+
 def read_pass(name):
     '''
     ログからパスワードを読み込みます
@@ -90,13 +98,16 @@ if __name__ == '__main__':
     with open(log_file, 'rb') as f:
         encryption = pickle.load(f)
 
-    cmdstring = 'パスワード閲覧ですか？入力ですか？(view(v)/set(s))\n終了するときは"exit,リセットは"reset",マスタパスワードを入れなおす"repass"\n:'
+    cmdstring = 'パスワード閲覧ですか？入力ですか？削除ですか？(view(v)/set(s)/delete(d))\n終了するときは"exit,リセットは"reset",マスタパスワードを入れなおす"repass"\n:'
     cmd = input(cmdstring)
     while cmd != 'exit':
         if cmd == 'set' or cmd == 's':
             set_pass()
         elif cmd == 'view' or cmd == 'v':
             view_pass()
+        elif cmd == 'delete' or cmd == 'd':
+            name = input('項目名をいれてください\n:')
+            del_pass(name)
         elif cmd == 'reset':
             if input('記録していたすべての情報が消えます。\n本当によろしいですか？(y/n):') == 'y':
                 reset_log()
